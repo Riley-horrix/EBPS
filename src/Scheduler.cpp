@@ -7,8 +7,9 @@
  */
 #include "Scheduler.h"
 
-#include "Time.h"
+#include "TimeUtils.h"
 
+#include <iostream>
 #include <functional>
 #include <thread>
 
@@ -29,19 +30,19 @@ Scheduler::Scheduler() {}
 Scheduler::~Scheduler() {}
 
 std::unique_ptr<Scheduler::Handle>
-EBPS::Scheduler::createTimeout(std::function<void(void)> task, 
+Scheduler::timeout(std::function<void(void)> task, 
     uint64_t timeout) {
-
     // Use clock here
-    uint64_t timeToQueue = timeout + Time::now();
+    uint64_t timeToQueue = timeout + TimeUtils::now();
 
     TimedTask taskToQueue(task, timeToQueue);
 
     // Find the first task with a larger timestamp than the task to queue.
     // You need 2 iterators here since the queue is only forward directional.
     auto it = queue.begin();
-    auto backIt = queue.begin();
-    while (it++->time < timeToQueue) {
+    auto backIt = queue.before_begin();
+    while (it != queue.end() && it->time < timeToQueue) {
+        it++;
         backIt++;
     }
 
@@ -53,13 +54,14 @@ EBPS::Scheduler::createTimeout(std::function<void(void)> task,
                                     { this->cancelTask(taskToQueue.uid); });
 }
 
-void EBPS::Scheduler::start(void) {
+void Scheduler::start(void) {
+    shouldRun = true;
     while (shouldRun && !queue.empty()) {
         // Reset the cancelledTask flag
         cancelledTask = false;
 
         // Current time in microseconds
-        uint64_t timeNow = Time::now();
+        uint64_t timeNow = TimeUtils::now();
 
         // Get the next task to run
         auto& task = queue.front();
@@ -68,9 +70,9 @@ void EBPS::Scheduler::start(void) {
             // Sleep the current thread until the next task
             std::this_thread::sleep_for(std::chrono::microseconds(task.time - timeNow));
 
-            timeNow = Time::now();
+            timeNow = TimeUtils::now();
         }
-        
+
         // Execute task and handle requeuing or cancelling
         task.task();
 
@@ -82,32 +84,33 @@ void EBPS::Scheduler::start(void) {
             task.time = timeNow + task.interval;
 
             auto it = queue.begin();
-            auto backIt = queue.begin();
-            while (it++->time < task.time) {
+            auto backIt = queue.before_begin();
+            while (it != queue.end() && it->time < task.time) {
+                it++;
                 backIt++;
             }
 
             // Insert element
             queue.emplace_after(backIt, task);
-        }
-        
+        }        
     }
 }
 
-void EBPS::Scheduler::stop(void) {
+void Scheduler::stop(void) {
     shouldRun = false;
 }
 
-void EBPS::Scheduler::cancelTask(const uint64_t uid)
+void Scheduler::cancelTask(const uint64_t uid)
 {
     // Find task with specified uid
     auto it = queue.begin();
-    auto backIt = queue.begin();
-    while (it++->uid != uid) {
+    auto backIt = queue.before_begin();
+    while (it != queue.end() && it->uid != uid) {
+        it++; 
         backIt++;
     }
 
-    if (backIt == queue.begin()) {
+    if (backIt == queue.before_begin()) {
         // If the task to cancel is the task currently running then pop
         // the task and set cancelled.
         queue.pop_front();
@@ -118,7 +121,7 @@ void EBPS::Scheduler::cancelTask(const uint64_t uid)
     }
 }
 
-EBPS::Scheduler::TimedTask::TimedTask(const std::function<void(void)> task, 
+Scheduler::TimedTask::TimedTask(const std::function<void(void)> task, 
     const uint64_t timestamp, const uint64_t interval): 
         uid(0), time(timestamp), task(task), interval(interval) {
     static uint64_t uidGen = 0;

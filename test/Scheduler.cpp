@@ -9,7 +9,7 @@ TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
 
     int count = 0;
 
-    scheduler.createTimeout([&]() {count++;}, 100);
+    scheduler.timeout([&]() {count++;}, 100);
 
     scheduler.start();
 

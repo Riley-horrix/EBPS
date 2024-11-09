@@ -7,11 +7,11 @@
  */
 #pragma once
 
-#include <cinttypes>
+#include <cstdint>
 
 namespace EBPS {
 
-class Time {
+class TimeUtils {
 public:
     /**
      * @brief Returns the current time since clock epoch in milliseconds.
@@ -23,7 +23,7 @@ public:
     /**
      * @brief Convert seconds to milliseconds.
      */
-    static inline uint32_t secToMicro(const uint32_t sec);
+    static uint32_t secToMilli(const uint32_t sec);
 
 private:
     // Delete constructors and destructors
