@@ -2,8 +2,6 @@
 
 #include "Scheduler.h"
 
-#include <iostream>
-
 using namespace EBPS;
 
 TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
@@ -12,7 +10,7 @@ TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
     int count = 0;
 
     // Schedule timeout to inc counter
-    scheduler.timeout([&]() {count++;}, 100);
+    scheduler.timeout([&]() {count++;}, 10);
 
     scheduler.start();
 
@@ -26,8 +24,8 @@ TEST_CASE("Task can stop scheduler and will run again", "[Scheduler]") {
     int count = 0;
 
     // Schedule an earlier timeout that stops the scheduler
-    scheduler.timeout([&]() {count++; scheduler.stop();}, 100);
-    scheduler.timeout([&]() {count++;}, 200);
+    scheduler.timeout([&]() {count++; scheduler.stop();}, 10);
+    scheduler.timeout([&]() {count++;}, 20);
 
     // Timeout 1 should stop scheduler after incrementing counter
     scheduler.start();
@@ -48,17 +46,17 @@ TEST_CASE("Scheduler will order timeouts correctly", "[Scheduler]") {
     scheduler.timeout([&]() {
         b++;
         REQUIRE((a==1 && b == 1 && c == 0));
-    }, 200);
+    }, 20);
 
     scheduler.timeout([&]() {
         a++;
         REQUIRE((a==1 && b == 0 && c == 0));
-    }, 100);
+    }, 10);
 
     scheduler.timeout([&]() {
         c++;
         REQUIRE((a==1 && b == 1 && c == 1));
-    }, 300);
+    }, 30);
 
     scheduler.start();
     REQUIRE(((a == b) && (c == 1) && (b == c)));
@@ -72,11 +70,11 @@ TEST_CASE("Tasks can be cancelled", "[Scheduler]") {
     // Shouldn't run and count should be 0
     auto handle = scheduler.timeout([&]() {
         count++;
-    }, 200);
+    }, 20);
 
     scheduler.timeout([&]() {
         handle->cancel();
-    }, 100);
+    }, 10);
 
     scheduler.start();
     REQUIRE(count == 0);
@@ -102,7 +100,7 @@ TEST_CASE("Scheduler can repeat interval tasks", "[Scheduler]") {
         if (count == 10) {
             handle->cancel();
         }
-    }, 100);
+    }, 10);
 
     scheduler.start();
     REQUIRE(count == 10);

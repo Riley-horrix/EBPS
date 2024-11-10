@@ -79,6 +79,9 @@ public:
     /**
      * @brief Schedule a task to be executed every PERIOD number of milliseconds.
      * 
+     * This will schedule the task to be executed immediately and then the
+     * period delay will be used.
+     * 
      * @param task A void function object containing the task executable.
      * @param period The number of microseconds required between executing
      *      the task.
@@ -146,6 +149,13 @@ private:
          */
         const time_t interval;
     };
+
+    /**
+     * @brief Insert a task into the queue.
+     * 
+     * @param task The task to insert.
+     */
+    void insertTask(const TimedTask& task);
 
     // This could be implemented better as a min-heap in an array
     //! @brief The backing class containing the tasks

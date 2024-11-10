@@ -11,9 +11,19 @@
 
 namespace EBPS {
 
-//! @brief Time type
+//! @brief Time type - this is 32 bits because the ESP32 only gives 32 bits of
+//! accuracy.
 using time_t = uint32_t;
 
+/**
+ * @brief A utility class providing time based functions and utilities.
+ * 
+ * Mainly, it can give the current 'ground truth' time, this is not defined as
+ * being the time since epoch (since it is only 32b). In the future if the 
+ * system can be configured to query GPS time, the time_t type can be changed
+ * to a 64 bit type, and a constant offset can be applied to the system clock.
+ * 
+ */
 class TimeUtils {
 public:
     /**

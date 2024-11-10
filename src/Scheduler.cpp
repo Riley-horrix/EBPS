@@ -9,7 +9,6 @@
 
 #include "TimeUtils.h"
 
-#include <iostream>
 #include <functional>
 #include <thread>
 #include <forward_list>
@@ -18,7 +17,8 @@ using namespace EBPS;
 
 // TODO :: extract queue manipulation to inline functions
 
-Scheduler::Handle::Handle(std::function<void(void)> function) : cancelFn(std::move(function)) {}
+Scheduler::Handle::Handle(std::function<void(void)> function):
+    cancelFn(std::move(function)) {}
 
 Scheduler::Handle::~Handle() {}
 
@@ -37,49 +37,28 @@ Scheduler::timeout(std::function<void(void)> task,
     time_t timeout) {
 
     time_t timeToQueue = timeout + TimeUtils::now();
-
     TimedTask taskToQueue(task, timeToQueue);
 
-    // Find the first task with a larger timestamp than the task to queue.
-    // You need 2 iterators here since the queue is only forward directional.
-    auto it = queue.begin();
-    auto backIt = queue.before_begin();
-    while (it != queue.end() && it->time < timeToQueue) {
-        it++;
-        backIt++;
-    }
-
-    // Insert element
-    queue.emplace_after(backIt, taskToQueue);
+    insertTask(taskToQueue);
 
     // Return a cancellable handle
-    return std::make_unique<Handle>([this, taskToQueue]()
-                                    { this->cancelTask(taskToQueue.uid); });
+    return std::make_unique<Handle>([this, taskToQueue]() {
+        this->cancelTask(taskToQueue.uid);
+    });
 }
 
 std::unique_ptr<Scheduler::Handle>
-Scheduler::interval(std::function<void(void)> task, 
-    time_t period) {
-
+Scheduler::interval(std::function<void(void)> task, time_t period) {
+    // Immediately queue task
     time_t timeToQueue = TimeUtils::now();
-
     TimedTask taskToQueue(task, timeToQueue, period);
 
-    // Find the first task with a larger timestamp than the task to queue.
-    // You need 2 iterators here since the queue is only forward directional.
-    auto it = queue.begin();
-    auto backIt = queue.before_begin();
-    while (it != queue.end() && it->time < timeToQueue) {
-        it++;
-        backIt++;
-    }
-
-    // Insert element
-    queue.emplace_after(backIt, taskToQueue);
+    insertTask(taskToQueue);
 
     // Return a cancellable handle
-    return std::make_unique<Handle>([this, taskToQueue]()
-                                    { this->cancelTask(taskToQueue.uid); });
+    return std::make_unique<Handle>([this, taskToQueue]() {
+        this->cancelTask(taskToQueue.uid);
+    });
 }
 
 
@@ -91,15 +70,17 @@ void Scheduler::start(void) {
         // Reset the cancelledTask flag
         cancelledTask = false;
 
-        // Current time in microseconds
+        // Current time in milliseconds
         time_t timeNow = TimeUtils::now();
 
         // Get the next task to run
-        auto& task = queue.front();
+        TimedTask& task = queue.front();
 
         if (timeNow < task.time) {
             // Sleep the current thread until the next task
-            std::this_thread::sleep_for(std::chrono::microseconds(task.time - timeNow));
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(task.time - timeNow)
+            );
 
             timeNow = TimeUtils::now();
         }
@@ -108,24 +89,13 @@ void Scheduler::start(void) {
         task.task();
 
         // Remove task from the queue
-
         if (task.interval == NO_REPEAT || cancelledTask) {
             queue.pop_front();
-        // If task is set to repeat and is not cancelled then reschedule
         } else {
-
-            // std::cout << "requeue\n";
             // Else requeue it at the correct position
+            // Use time now rather than task time to prevent backlog of tasks
             task.time = timeNow + task.interval;
-
-            auto it = queue.begin();
-            auto backIt = queue.before_begin();
-            while (it != queue.end() && it->time < task.time) {
-                it++;
-                backIt++;
-            }
-
-            queue.emplace_after(backIt, task);
+            insertTask(task);
             queue.pop_front();
         }        
     }
@@ -159,4 +129,24 @@ Scheduler::TimedTask::TimedTask(const std::function<void(void)> task,
         uid(0), time(timestamp), task(task), interval(interval) {
     static uid_t uidGen = 0;
     uid = uidGen++;
+}
+
+void Scheduler::insertTask(const TimedTask& task) {
+    auto it = queue.begin();
+    auto backIt = queue.before_begin();
+
+    // Find the first task with a larger timestamp than the task to queue.
+    // You need 2 iterators here since the queue is only forward directional.
+    while (it != queue.end() && it->time < task.time) {
+        it++;
+        backIt++;
+    }
+
+    // If the element should be inserted at front then push front
+    if (backIt == queue.before_begin()) {
+        queue.push_front(task);
+    } else {
+        // Else emplace after the back iterator
+        queue.emplace_after(backIt, task);
+    }
 }

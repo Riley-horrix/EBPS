@@ -8,12 +8,11 @@
 #include "TimeUtils.h"
 
 #include <cstdint>
-#include <iostream>
 #include <chrono>
 
 using namespace EBPS;
 
-#define SEC_TO_MILLI 1000
+const int SEC_TO_MILLI = 1000;
 
 EBPS::time_t TimeUtils::now() {
     std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
