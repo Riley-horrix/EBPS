@@ -11,24 +11,27 @@
 
 namespace EBPS {
 
+//! @brief Time type
+using time_t = uint32_t;
+
 class TimeUtils {
 public:
     /**
      * @brief Returns the current time since clock epoch in milliseconds.
      * 
-     * @return uint64_t Time since epoch in millis.
+     * @return time_t Time since epoch in millis.
      */
-    static uint32_t now(void);
+    static time_t now(void);
 
     /**
      * @brief Convert seconds to milliseconds.
      */
-    static uint32_t secToMilli(const uint32_t sec);
+    static time_t secToMilli(const time_t sec);
 
 private:
     // Delete constructors and destructors
-    // Time() = delete;
-    // ~Time() = delete;
+    TimeUtils() = delete;
+    ~TimeUtils() = delete;
 };
 
 } // Namespace EBPS

@@ -15,13 +15,13 @@ using namespace EBPS;
 
 #define SEC_TO_MILLI 1000
 
-uint32_t TimeUtils::now() {
+EBPS::time_t TimeUtils::now() {
     std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::system_clock::now().time_since_epoch());
 
     return ms.count();
 }
 
-uint32_t TimeUtils::secToMilli(const uint32_t sec) {
+EBPS::time_t TimeUtils::secToMilli(const EBPS::time_t sec) {
     return sec * SEC_TO_MILLI;
 }

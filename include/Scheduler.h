@@ -8,6 +8,8 @@
  */
 #pragma once
 
+#include "TimeUtils.h"
+
 #include <forward_list>
 #include <functional>
 #include <memory>
@@ -72,7 +74,18 @@ public:
      * @return std::unique_ptr<Handle> A pointer to a handle object that allows
      *      the caller to cancel the task.
      */
-    std::unique_ptr<Handle> timeout(std::function<void(void)> task, uint64_t timeout);
+    std::unique_ptr<Handle> timeout(std::function<void(void)> task, time_t timeout);
+
+    /**
+     * @brief Schedule a task to be executed every PERIOD number of milliseconds.
+     * 
+     * @param task A void function object containing the task executable.
+     * @param period The number of microseconds required between executing
+     *      the task.
+     * @return std::unique_ptr<Handle> A pointer to a handle object that allows
+     *      the caller to cancel the repeating task.
+     */
+    std::unique_ptr<Handle> interval(std::function<void(void)> task, time_t period);
 
     /**
      * @brief Starts the scheduler.
@@ -93,15 +106,19 @@ public:
      */
     void stop(void);
 
-    static const uint64_t NO_REPEAT = -1;
+    //! @brief Represents a non repeating interval
+    static const time_t NO_REPEAT = -1;
 
 private:
+
+    using uid_t = uint32_t;
+
     /**
      * @brief Cancels a task given its unique identifier.
      *
      * @param uid Unique identifier.
      */
-    void cancelTask(const uint64_t uid);
+    void cancelTask(const uid_t uid);
 
     /**
      * @brief Internal representation of a task object;
@@ -110,13 +127,13 @@ private:
      */
     struct TimedTask
     {
-        TimedTask(const std::function<void(void)> task, const uint64_t timestamp, const uint64_t interval = Scheduler::NO_REPEAT);
+        TimedTask(const std::function<void(void)> task, const time_t timestamp, const time_t interval = Scheduler::NO_REPEAT);
 
         //! @brief Unique Identifier - used to cancel tasks.
-        uint64_t uid;
+        uid_t uid;
 
         //! @brief Timestamp for required execution time in microseconds.
-        uint64_t time;
+        time_t time;
 
         //! @brief The actual payload.
         const std::function<void(void)> task;
@@ -127,7 +144,7 @@ private:
          * If this number is set to Scheduler::NO_REPEAT then the task will
          * not repeat.
          */
-        const uint64_t interval;
+        const time_t interval;
     };
 
     // This could be implemented better as a min-heap in an array
