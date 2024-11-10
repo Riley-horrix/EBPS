@@ -105,3 +105,5 @@ TEST_CASE("Scheduler can repeat interval tasks", "[Scheduler]") {
     scheduler.start();
     REQUIRE(count == 10);
 }
+
+// TODO : write some more unit tests for interval setting.
