@@ -109,6 +109,14 @@ public:
      */
     void stop(void);
 
+    /**
+     * @brief Clear all tasks from the Scheduler queue.
+     * 
+     * Note that the currently running task that calls this method will run to
+     * completion.
+     */
+    void clear(void);
+
 private:
     //! @brief Represents a non repeating interval
     static const time_t NO_REPEAT = -1;

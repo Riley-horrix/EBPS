@@ -116,6 +116,17 @@ void Scheduler::stop(void) {
     shouldRun = false;
 }
 
+void Scheduler::clear(void) {
+    TimedTask current = queue.front();
+    
+    queue.clear();
+
+    // If still running then let the current task finish
+    if (shouldRun) {
+        queue.emplace_front(current);
+    }
+}
+
 void Scheduler::cancelTask(const uid_t uid) {
     // Find task with specified uid
     auto it = queue.begin();

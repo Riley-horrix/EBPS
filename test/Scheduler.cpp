@@ -125,7 +125,7 @@ TEST_CASE("Scheduler can repeat interval tasks", "[Scheduler]") {
     REQUIRE(count == 10);
 }
 
-TEST_CASE("Tasks using different frequencies execute well", "[Scheduler1]") {
+TEST_CASE("Tasks using different frequencies execute properly", "[Scheduler]") {
     Scheduler scheduler;
 
     int countA = 0;
@@ -155,4 +155,33 @@ TEST_CASE("Tasks using different frequencies execute well", "[Scheduler1]") {
 
     REQUIRE((countA >= 90 && countA <= 110));
     REQUIRE((countB >= 45 && countB <= 55));
+}
+
+TEST_CASE("Scheduled tasks can clear the scheduler", "[Scheduler]") {
+    Scheduler scheduler;
+
+    int countA = 0;
+    int countB = 0;
+
+    scheduler.timeout([&]() {
+        countA++;
+    }, 10);
+    scheduler.timeout([&]() {
+        countA++;
+    }, 20);
+
+    std::unique_ptr<Scheduler::Handle> handle = scheduler.interval([&]() {
+        if (countB == 0) {
+            scheduler.clear();
+        }
+        countB++;
+        if (countB >= 10) {
+            handle->cancel();
+        }
+    }, 5);
+
+    scheduler.start();
+
+    REQUIRE(countA == 0);
+    REQUIRE(countB == 10);
 }
