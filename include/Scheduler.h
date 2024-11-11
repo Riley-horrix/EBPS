@@ -109,10 +109,9 @@ public:
      */
     void stop(void);
 
+private:
     //! @brief Represents a non repeating interval
     static const time_t NO_REPEAT = -1;
-
-private:
 
     using uid_t = uint32_t;
 

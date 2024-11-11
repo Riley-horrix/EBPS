@@ -9,11 +9,23 @@
 
 #include "TimeUtils.h"
 
+#include <iostream>
 #include <functional>
 #include <thread>
 #include <forward_list>
 
 using namespace EBPS;
+
+template<class T>
+int listsize(const std::forward_list<T>& q) {
+    auto it = q.begin();
+    int count = 0;
+    while (it != q.end()) {
+        it++;
+        count++;
+    }
+    return count;
+}
 
 // TODO :: extract queue manipulation to inline functions
 
@@ -61,7 +73,6 @@ Scheduler::interval(std::function<void(void)> task, time_t period) {
     });
 }
 
-
 // TODO :: make this use std::shared_ptr? it should probably
 // get front and dequeue at the same time
 void Scheduler::start(void) {
@@ -74,7 +85,7 @@ void Scheduler::start(void) {
         time_t timeNow = TimeUtils::now();
 
         // Get the next task to run
-        TimedTask& task = queue.front();
+        TimedTask task = queue.front();
 
         if (timeNow < task.time) {
             // Sleep the current thread until the next task
@@ -85,19 +96,19 @@ void Scheduler::start(void) {
             timeNow = TimeUtils::now();
         }
 
-        // Execute task and handle requeuing or cancelling
+        // Execute task
         task.task();
 
-        // Remove task from the queue
-        if (task.interval == NO_REPEAT || cancelledTask) {
-            queue.pop_front();
-        } else {
-            // Else requeue it at the correct position
+        // If task should repeat and is not cancelled
+        if (task.interval != NO_REPEAT && !cancelledTask) {
+            // Requeue it at the correct position
             // Use time now rather than task time to prevent backlog of tasks
             task.time = timeNow + task.interval;
             insertTask(task);
-            queue.pop_front();
-        }        
+        }     
+
+        // Remove currently running task
+        queue.pop_front();   
     }
 }
 
@@ -114,6 +125,8 @@ void Scheduler::cancelTask(const uid_t uid) {
         backIt++;
     }
 
+
+
     if (backIt == queue.before_begin()) {
         // If the task to cancel is the task currently running then 
         // set cancelled.
@@ -127,7 +140,7 @@ void Scheduler::cancelTask(const uid_t uid) {
 Scheduler::TimedTask::TimedTask(const std::function<void(void)> task, 
     const time_t timestamp, const time_t interval): 
         uid(0), time(timestamp), task(task), interval(interval) {
-    static uid_t uidGen = 0;
+    static uid_t uidGen = 1;
     uid = uidGen++;
 }
 
@@ -144,7 +157,7 @@ void Scheduler::insertTask(const TimedTask& task) {
 
     // If the element should be inserted at front then push front
     if (backIt == queue.before_begin()) {
-        queue.push_front(task);
+        queue.emplace_front(task);
     } else {
         // Else emplace after the back iterator
         queue.emplace_after(backIt, task);

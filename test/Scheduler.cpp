@@ -2,6 +2,8 @@
 
 #include "Scheduler.h"
 
+#include <iostream>
+
 using namespace EBPS;
 
 TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
@@ -15,7 +17,6 @@ TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
     scheduler.start();
 
     REQUIRE(count == 1);
-
 }
 
 TEST_CASE("Task can stop scheduler and will run again", "[Scheduler]") {
@@ -64,7 +65,6 @@ TEST_CASE("Scheduler will order timeouts correctly", "[Scheduler]") {
 
 TEST_CASE("Tasks can be cancelled", "[Scheduler]") {
     Scheduler scheduler;
-
     int count = 0;
 
     // Shouldn't run and count should be 0
@@ -90,6 +90,25 @@ TEST_CASE("Tasks can be cancelled", "[Scheduler]") {
     REQUIRE(count == 1);
 }
 
+TEST_CASE("Recursive task setting works", "[Scheduler]") {
+    Scheduler scheduler;
+    int count = 0;
+
+    scheduler.timeout([&]() {
+        count++;
+        scheduler.timeout([&]() {
+            count++;
+            scheduler.timeout([&]() {
+                count++;
+            }, 10);
+        }, 10);
+    }, 10);
+
+    scheduler.start();
+    
+    REQUIRE(count == 3);
+}
+
 TEST_CASE("Scheduler can repeat interval tasks", "[Scheduler]") {
     Scheduler scheduler;
 
@@ -106,4 +125,34 @@ TEST_CASE("Scheduler can repeat interval tasks", "[Scheduler]") {
     REQUIRE(count == 10);
 }
 
-// TODO : write some more unit tests for interval setting.
+TEST_CASE("Tasks using different frequencies execute well", "[Scheduler1]") {
+    Scheduler scheduler;
+
+    int countA = 0;
+    int countB = 0;
+
+    // Setup two intervals, one running twice as slow as another
+    auto handleA = scheduler.interval([&]() {
+        countA++;
+    }, 10);
+
+    auto handleB = scheduler.interval([&]() {
+        countB++;
+    }, 20);
+
+    std::unique_ptr<Scheduler::Handle> handle = scheduler.interval([&]() {
+        if (countA >= 100 || countB >= 50) {
+            handleA->cancel();
+            handleB->cancel();
+            handle->cancel();
+        }
+    }, 3);
+
+    scheduler.start();
+
+    std::cout << "count A (90 <= a <= 110) = " << countA << "\n";
+    std::cout << "count B (45 <= a <= 55) = " << countB << "\n";
+
+    REQUIRE((countA >= 90 && countA <= 110));
+    REQUIRE((countB >= 45 && countB <= 55));
+}
