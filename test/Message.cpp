@@ -132,12 +132,15 @@ TEST_CASE("Messaging system can pass messages between classes", "[Message]") {
 
     std::unique_ptr<Scheduler::Handle> handle = SCHEDULER.interval([&]() {
         count++;
-        if (estimator.receivedMessage || count >= 10) {
+        if (estimator.receivedMessage || count >= 20) {
             SCHEDULER.clear();
             handle->cancel();
         }
-    }, 10);
+    }, 5);
 
-    // Require that the estimator receives messages before count >= 10
-    REQUIRE(count < 10);
+    SCHEDULER.start();
+
+    // Require that the estimator receives messages before count >= 20
+    REQUIRE(count > 0); 
+    REQUIRE(count < 20);
 }
