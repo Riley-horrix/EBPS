@@ -126,7 +126,7 @@ TEST_CASE("Messaging system can pass messages between classes", "[Message]") {
     GyroSensor gyro;
     Estimator estimator;
 
-    std::cout << "[Message] system tests\n";
+    std::cout << "[Message] tests\n";
 
     vendor.addPublisher(gyro);
     vendor.addSubscriber(estimator);

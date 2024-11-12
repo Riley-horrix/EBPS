@@ -15,6 +15,7 @@ TEST_CASE("Scheduler can queue a task", "[Scheduler]") {
     scheduler.timeout([&]() {count++;}, 10);
 
     scheduler.start();
+    std::cout << "[Scheduler] tests\n";
 
     REQUIRE(count == 1);
 }

@@ -23,7 +23,11 @@ include(./CMakeSources.cmake)
 add_library(${LIBRARY} SHARED ${SRC_FILES})
 
 # Add Testing Libraries
-if (${CI})
+
+find_package(Catch2)
+if(TARGET Catch2::Catch2)
+	message("Found catch2")
+else()
   message("Installing Catch2")
   Include(FetchContent)
   FetchContent_Declare(
@@ -32,9 +36,6 @@ if (${CI})
     GIT_TAG        v3.4.0 # or a later release
   )
   FetchContent_MakeAvailable(Catch2)
-else ()
-  message("NOT WORKED")
-  find_package(Catch2 3 REQUIRED)
 endif()
 
 add_executable(${TEST_EXE} ${TEST_SRC_FILES})
