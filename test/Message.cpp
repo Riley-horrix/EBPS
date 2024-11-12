@@ -27,9 +27,7 @@ Scheduler SCHEDULER;
 
 class GyroMessage : public Message {
 public:
-    static const msgid_t id = GYRO;
-
-    GyroMessage(double accX, double accY, double accZ): accX(accX), accY(accY), accZ(accZ) {}
+    GyroMessage(double accX, double accY, double accZ): Message(GyroMessage::id), accX(accX), accY(accY), accZ(accZ) {}
     
     ~GyroMessage() {}
 
@@ -38,6 +36,8 @@ public:
     double accY = 0;
     
     double accZ = 0;
+
+    static const msgid_t id = GYRO;
 };
 
 // Static storage for the message id
@@ -79,6 +79,9 @@ private:
 class Estimator : public Subscriber {
 public:
     Estimator() {
+
+        messagesConsumed.push_back(GyroMessage::id);
+
         auto handle = SCHEDULER.interval([this]() {
             this->update();
         }, std::ceil(1000 / frequency));
@@ -108,7 +111,7 @@ public:
     bool receivedMessage = false;
 
 private:
-    double frequency = 100;
+    double frequency = 500;
 
     double accX = 0;
     double accY = 0;
@@ -136,7 +139,7 @@ TEST_CASE("Messaging system can pass messages between classes", "[Message]") {
             SCHEDULER.clear();
             handle->cancel();
         }
-    }, 5);
+    }, 1);
 
     SCHEDULER.start();
 

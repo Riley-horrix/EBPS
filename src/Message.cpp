@@ -9,4 +9,4 @@
 
 using namespace EBPS;
 
-Message::Message() {}
+Message::Message(const msgid_t id): id(id) {}

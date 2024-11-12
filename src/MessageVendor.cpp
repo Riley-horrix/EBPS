@@ -8,6 +8,7 @@
 #include "MessageVendor.h"
 #include "Publisher.h"
 
+#include <iostream>
 #include <memory>
 #include <functional>
 
@@ -19,7 +20,6 @@ MessageVendor::~MessageVendor() {}
 
 void MessageVendor::post(std::shared_ptr<Message> message) {
     msgid_t msg = message->id;
-
     for (Subscriber& sub : subscriberMap[msg]) {
         sub.notify(message);
     }

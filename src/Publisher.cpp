@@ -9,6 +9,7 @@
 
 #include "Message.h"
 
+#include <iostream>
 #include <memory>
 
 using namespace EBPS;
