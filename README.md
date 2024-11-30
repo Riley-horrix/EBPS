@@ -1,6 +1,9 @@
 # EBPS
 A simple event-based publish-subscribe messaging model, this was designed for use as part of [Imperial College Rocketry Firmware](https://github.com/icl-rocketry/Ricardo-PickleRick).
 
+## Future Development
+- Multi-threaded Schdeuler
+
 ## Building
 
 This project uses cmake, and catch2 for testing.
